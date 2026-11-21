@@ -1,8 +1,7 @@
 # DNA Intelligence
 AI-Powered DNA Sequence Analysis and Classification System.
 
-Status: under construction (Phase 3 - sequence analysis pages).
-
+Status: under construction (Phase 4 - feature extraction).
 ## Setup
     python3 -m venv .venv
     source .venv/bin/activate
@@ -31,6 +30,15 @@ Status: under construction (Phase 3 - sequence analysis pages).
   `X_train, X_test, y_train, y_test = load_train_test()`
 - Labels: 1 = coding, 0 = intergenomic.
 
+## Features for machine learning (Phase 4)
+- Each DNA sequence becomes a vector of 326 numbers: GC and AT content, A/C/G/T
+  frequencies, and all 64 3-mer and 256 4-mer frequencies (fixed alphabetical vocabulary).
+- **Build the matrices:**  `python -m src.feature_extraction`
+  (creates `data/processed/features.npz` and `feature_info.json`)
+- **Use in Python:**
+  `from src.feature_extraction import extract_features, get_feature_matrices`
+  `vector = extract_features("ATGC...")`  (one sequence)
+  `X_train, X_test, y_train, y_test = get_feature_matrices()`  (whole dataset)
 ## Run the app
     streamlit run app.py
 
