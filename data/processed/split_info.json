@@ -1,0 +1,35 @@
+{
+  "dataset": "demo_coding_vs_intergenomic_seqs",
+  "created_on": "2026-11-21",
+  "source_used": "local folder supplied by the user (/home/proxxy/.genomic_benchmarks/demo_coding_vs_intergenomic_seqs)",
+  "split_method": "stratified train_test_split on the cleaned data",
+  "test_size": 0.2,
+  "random_state": 42,
+  "label_meaning": {
+    "1": "coding",
+    "0": "intergenomic"
+  },
+  "sequence_length_bp": 200,
+  "counts": {
+    "train": {
+      "coding": 39942,
+      "intergenomic": 39993,
+      "total": 79935
+    },
+    "test": {
+      "coding": 9985,
+      "intergenomic": 9999,
+      "total": 19984
+    }
+  },
+  "cleaning_report": {
+    "rows_loaded": 100000,
+    "removed_wrong_length": 0,
+    "removed_non_ACGT": 0,
+    "removed_conflicting_labels": 0,
+    "removed_exact_duplicates": 81,
+    "rows_after_cleaning": 99919,
+    "coding_after_cleaning": 49927,
+    "intergenomic_after_cleaning": 49992
+  }
+}
