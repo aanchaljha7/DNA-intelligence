@@ -1,7 +1,7 @@
 # DNA Intelligence
 AI-Powered DNA Sequence Analysis and Classification System.
 
-Status: under construction (Phase 5 - model training).
+Status: under construction (Phase 6 - prediction page and performance dashboard).
 ## Setup
     python3 -m venv .venv
     source .venv/bin/activate
@@ -39,6 +39,17 @@ Status: under construction (Phase 5 - model training).
   `from src.feature_extraction import extract_features, get_feature_matrices`
   `vector = extract_features("ATGC...")`  (one sequence)
   `X_train, X_test, y_train, y_test = get_feature_matrices()`  (whole dataset)
+
+## Prediction and performance (Phase 6)
+- **Prediction System page:** choose Random Forest or SVM, enter a sequence or FASTA file,
+  and get Coding / Non-coding. The forest also gives a probability; the SVM gives a score
+  (above 0 = coding). Shows length, GC/AT, base frequencies and key features.
+- **Model Performance page:** metrics, confusion matrices, classification reports, ROC
+  curves, a side-by-side comparison and Random Forest feature importance. All numbers
+  come from the saved models and `models/metrics.json`.
+- **Create the ROC data once after training (no re-training):**  `python -m src.evaluation`
+- Predictions are only meaningful for 200 bp sequences like the training data, and are for
+  learning and demonstration only.
 ## Run the app
     streamlit run app.py
 

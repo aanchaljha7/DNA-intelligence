@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
+from src import evaluation as ev
+from src import prediction as pr
 from src import sequence_analysis as sa
 from src import visualization as viz
 
@@ -320,13 +322,150 @@ def show_ai_classification():
 
 
 def show_prediction():
-    st.title("Prediction System")
-    st.info("Placeholder: the trained model's predictions will appear here.")
+    st.title("DNA Prediction System")
+    st.warning(pr.DISCLAIMER)
+
+    if not all(pr.models_available().values()):
+        st.error("The trained model files were not found in the models/ folder. "
+                 "Train them first with:  python -m src.model_training")
+        return
+
+    model_name = st.radio("Choose a model", list(pr.MODEL_CHOICES.keys()), horizontal=True,
+                          key="predict_model")
+    model_key = pr.MODEL_CHOICES[model_name]
+
+    name, sequence = get_valid_sequence("predict")
+    if sequence is None:
+        return
+
+    try:
+        result = pr.predict_sequence(sequence, model_key)
+    except (ValueError, FileNotFoundError) as error:
+        st.error(str(error))
+        return
+
+    warning = pr.length_warning(result["length"])
+    if warning:
+        level, text = warning
+        if level == "warning":
+            st.warning(text)
+        else:
+            st.info(text)
+
+    st.subheader(f"Prediction ({model_name})")
+    col1, col2 = st.columns(2)
+    col1.metric("Predicted class", result["label_text"])
+    if result["probability_coding"] is not None:
+        col2.metric("Probability of coding", f"{result['probability_coding'] * 100:.1f}%")
+        show_figure(viz.plot_probability_bar(result["probability_coding"]))
+        st.caption("This probability is the forest's own confidence. It is not the chance "
+                   "that the sequence is really a coding sequence in a genome.")
+    else:
+        col2.metric("SVM score", f"{result['score']:+.3f}")
+        st.caption("The SVM gives no probability. Its score is the distance from the decision "
+                   "boundary: above 0 means coding, below 0 means non-coding, and the further "
+                   "from 0, the more clearly the sequence falls on that side. It is not a "
+                   "percentage.")
+    st.caption("For learning and demonstration only. This is not gene prediction.")
+
+    st.subheader("Your sequence")
+    stats = sa.basic_stats(sequence)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Length (bp)", f"{stats['length']:,}")
+    m2.metric("GC content", f"{stats['gc_content']}%")
+    m3.metric("AT content", f"{stats['at_content']}%")
+    st.dataframe(pd.DataFrame({
+        "Base": list(stats["counts"].keys()),
+        "Count": list(stats["counts"].values()),
+        "Frequency (%)": [stats["percentages"][b] for b in stats["counts"]],
+    }), hide_index=True)
+
+    st.subheader("Key features")
+    st.write("These are the features the Random Forest relies on most (read from the trained "
+             "forest). The table shows their values in your sequence. It is shown for either model.")
+    forest = pr.get_model("random_forest")
+    st.dataframe(pr.key_features_table(result["features"], forest, top_n=10), hide_index=True)
+    st.caption("All 326 features are frequencies between 0 and 1: GC and AT content, the four "
+               "bases, and every 3-mer and 4-mer. Importance shows what the forest used, "
+               "not a biological reason.")
 
 
 def show_model_performance():
-    st.title("Model Performance")
-    st.info("Placeholder: accuracy, confusion matrix and other metrics will appear here.")
+    st.title("Model Performance Dashboard")
+
+    try:
+        report = ev.load_results()
+    except FileNotFoundError as error:
+        st.error(str(error))
+        return
+
+    models = report["models"]
+    titles = {key: ev.MODEL_TITLES[key] for key in ev.MODEL_TITLES if key in models}
+    if not titles:
+        st.error("No model results were found in models/metrics.json.")
+        return
+
+    try:
+        roc_models = ev.load_roc_data()["models"]
+    except FileNotFoundError:
+        roc_models = None
+
+    test_samples = next(iter(models.values()))["test_samples"]
+    st.caption(
+        f"Models trained on {report['created_on']} with scikit-learn "
+        f"{report['scikit_learn_version']}. Every result below was measured on the same "
+        f"{test_samples:,} held-out test sequences, which the models never saw during training."
+    )
+
+    st.subheader("Side-by-side comparison")
+    st.dataframe(ev.comparison_table(models, roc_models))
+    show_figure(viz.plot_metric_comparison({titles[k]: models[k] for k in titles}))
+    trained = ", ".join(f"{titles[k]} on {models[k]['train_samples']:,} sequences" for k in titles)
+    st.caption(f"Training sizes: {trained}. Precision, recall and F1 are for the coding class "
+               "(the positive class).")
+
+    st.subheader("Confusion matrices")
+    for column, key in zip(st.columns(len(titles)), titles):
+        with column:
+            show_figure(viz.plot_confusion_matrix(models[key]["confusion_matrix"], titles[key]))
+    st.caption("Rows are the true class, columns are what the model predicted. "
+               "The percentages are shares of each true class.")
+
+    st.subheader("Classification reports")
+    for column, key in zip(st.columns(len(titles)), titles):
+        with column:
+            st.write(f"**{titles[key]}**")
+            st.dataframe(ev.classification_report_table(models[key]), hide_index=True)
+
+    st.subheader("ROC curves")
+    if roc_models:
+        show_figure(viz.plot_roc_curves({titles[k]: roc_models[k] for k in titles if k in roc_models}))
+        st.caption("A ROC curve shows how well a model's score separates the two classes at every "
+                   "possible cut-off. The closer to the top-left corner (AUC near 1), the better. "
+                   "The dashed diagonal (AUC 0.5) is random guessing. The forest uses its "
+                   "probability, the SVM its decision score.")
+    else:
+        st.info("ROC curves are not available yet. Create the data (no re-training needed) with:  "
+                "python -m src.evaluation")
+
+    st.subheader("Random Forest feature importance")
+    try:
+        forest = pr.get_model("random_forest")
+    except (ValueError, FileNotFoundError) as error:
+        st.error(str(error))
+        return
+    top_n = st.slider("Number of features to show", 5, 30, 15, key="importance_top")
+    table = ev.importance_table(forest)
+    show_figure(viz.plot_feature_importance(table, top_n))
+    st.dataframe(table.head(top_n), hide_index=True)
+    st.write("Importance by kind of feature:")
+    st.dataframe(ev.importance_by_group(forest), hide_index=True)
+    st.caption("Importance shows which features the forest used most when splitting. It does not "
+               "prove that a feature is biologically responsible for a sequence being coding.")
+
+    st.warning("These scores describe 200 bp benchmark fragments from one dataset, measured on "
+               "one train/test split. They do not show that the models can find genes in real "
+               "genomes.")
 
 
 def show_biology_learning():
@@ -340,7 +479,7 @@ def show_biology_learning():
 def main():
     st.sidebar.title("🧬 DNA Intelligence")
     page = st.sidebar.radio("Navigation", PAGES)
-    st.sidebar.caption("Phase 3: sequence analysis")
+    st.sidebar.caption("Phase 6: prediction and performance")
     st.sidebar.warning("For learning and demonstration only.")
 
     if page == PAGES[0]:
