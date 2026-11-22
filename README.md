@@ -49,3 +49,9 @@ Status: under construction (Phase 5 - model training).
 ## Disclaimer
 For learning and demonstration only. Not for clinical or research decisions.
 Model predictions on 200 bp benchmark fragments are not gene annotation.
+
+## Models(phase 5)
+- **Results on the held-out test set (19,984 sequences):**
+  Random Forest accuracy 0.886 (F1 0.885); SVM accuracy 0.906 (F1 0.906).
+  Full details in `models/metrics.json`. These scores are for 200 bp benchmark
+  fragments only and do not show that the models can find genes.
