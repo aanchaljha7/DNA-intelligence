@@ -10,6 +10,7 @@ import pandas as pd
 import streamlit as st
 
 from src import evaluation as ev
+from src import model_training as mt
 from src import prediction as pr
 from src import sequence_analysis as sa
 from src import visualization as viz
@@ -106,12 +107,43 @@ def show_figure(fig):
 def show_home():
     st.title("🧬 DNA Intelligence")
     st.subheader("AI-Powered DNA Sequence Analysis and Classification System")
-    st.write(
-        "Explore DNA sequences with the **DNA Sequence Analyzer** and the "
-        "**Biological Pattern Analysis** pages. Later phases add a machine learning "
-        "classifier for coding vs intergenomic sequences."
+    st.write("Analyse DNA sequences, explore their patterns, and use machine learning to tell "
+             "**coding** from **non-coding (intergenomic)** 200 bp fragments.")
+
+    # Quick numbers, read from the trained models' saved results
+    try:
+        models = ev.load_results()["models"]
+    except FileNotFoundError:
+        models = None
+    if models:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Random Forest accuracy", f"{models['random_forest']['accuracy'] * 100:.1f}%")
+        c2.metric("SVM accuracy", f"{models['svm']['accuracy'] * 100:.1f}%")
+        c3.metric("Test sequences", f"{models['svm']['test_samples']:,}")
+
+    needed = [("Random Forest model", mt.RF_MODEL_PATH), ("SVM model", mt.SVM_MODEL_PATH),
+              ("metrics.json", mt.METRICS_PATH), ("roc_data.json", ev.ROC_PATH)]
+    missing = [name for name, path in needed if not path.exists()]
+    if missing:
+        st.warning("Missing files: " + ", ".join(missing) + ". Create them with "
+                   "`python -m src.model_training` and `python -m src.evaluation`.")
+
+    st.subheader("What you can do")
+    left, right = st.columns(2)
+    left.markdown(
+        "**🔬 DNA Sequence Analyzer**  \nBase counts, GC content, reverse complement.\n\n"
+        "**🧩 Biological Pattern Analysis**  \nK-mers, codons and ORFs.\n\n"
+        "**🤖 AI Classification**  \nHow the classifier works."
     )
-    st.info("Pick a module in the sidebar. Use **Load example sequence** to try things quickly.")
+    right.markdown(
+        "**🎯 Prediction System**  \nCoding or non-coding? Pick a model.\n\n"
+        "**📊 Model Performance**  \nMetrics, confusion matrices, ROC curves.\n\n"
+        "**📚 Biology Learning**  \nShort explanations of the key ideas."
+    )
+
+    st.info("**Quick start:** open *DNA Sequence Analyzer* or *Prediction System* in the sidebar "
+            "and click **Load example sequence**.")
+    st.caption("For learning and demonstration only. Not for medical, clinical or research decisions.")
 
 
 # ---------------------------------------------------------------------------
@@ -318,7 +350,27 @@ def show_pattern_analysis():
 # ---------------------------------------------------------------------------
 def show_ai_classification():
     st.title("AI Classification")
-    st.info("Placeholder: information about how the coding vs intergenomic classifier works.")
+    st.write("**The task:** decide whether a 200 bp DNA fragment looks like a **coding** "
+             "sequence or a **non-coding (intergenomic)** one.")
+    st.markdown(
+        "**How it works**\n"
+        "1. The sequence becomes 326 numbers (features): GC and AT content, the frequency of "
+        "A, C, G and T, and the frequency of every 3-mer and 4-mer.\n"
+        "2. A trained model turns those numbers into a prediction.\n"
+        "3. Two models are available:\n"
+        "   - **Random Forest**: many decision trees vote. It gives a probability.\n"
+        "   - **SVM**: finds a boundary between the two classes. It gives a score."
+    )
+    try:
+        models = ev.load_results()["models"]
+        st.write(f"The Random Forest learned from {models['random_forest']['train_samples']:,} "
+                 f"training sequences and the SVM from {models['svm']['train_samples']:,}. Both "
+                 f"were tested on {models['svm']['test_samples']:,} sequences they had never seen. "
+                 "See *Model Performance* for the results.")
+    except FileNotFoundError:
+        st.info("Train the models to see their training details here.")
+    st.warning("The models only recognise composition patterns in this benchmark dataset. They "
+               "are not gene finders and should not be trusted for other lengths or organisms.")
 
 
 def show_prediction():
@@ -468,9 +520,44 @@ def show_model_performance():
                "genomes.")
 
 
+LEARNING_TOPICS = [
+    ("DNA and its four bases",
+     "DNA is a long chain of four bases: A (adenine), C (cytosine), G (guanine) and T (thymine). "
+     "A pairs with T and C pairs with G. The order of the bases carries information."),
+    ("GC content",
+     "GC content is the percentage of bases that are G or C. It differs between organisms and "
+     "between regions of a genome, so it is a simple but useful feature."),
+    ("Reverse complement",
+     "DNA has two strands that run in opposite directions. The reverse complement is the other "
+     "strand read 5' to 3': swap A with T and C with G, then reverse the order."),
+    ("Codons and the genetic code",
+     "A codon is three bases in a row. Most codons stand for an amino acid, and amino acids join "
+     "to make a protein. ATG usually marks a start; TAA, TAG and TGA are stop codons."),
+    ("Reading frames and ORFs",
+     "A sequence can be read in three frames. An open reading frame (ORF) starts at ATG and runs "
+     "to the next stop codon. An ORF is only a candidate: random DNA contains many ORFs, so it "
+     "is not proof of a gene."),
+    ("Coding and non-coding DNA",
+     "Coding DNA holds the instructions for proteins; non-coding DNA does not. In this project's "
+     "dataset the non-coding class is called 'intergenomic', and the models learn to tell the two "
+     "apart from patterns in the sequence."),
+    ("K-mers",
+     "A k-mer is a short 'word' of k bases, such as the 3-mer ATG. Counting k-mers captures "
+     "local patterns, which is how the models 'see' a sequence."),
+    ("Reading the model results",
+     "Accuracy is the share of correct predictions. Precision is how many sequences called coding "
+     "really are. Recall is how many coding sequences were found. F1 combines precision and "
+     "recall. The ROC curve and its AUC show how well the score separates the classes "
+     "(1.0 is perfect, 0.5 is guessing)."),
+]
+
+
 def show_biology_learning():
     st.title("Biology Learning")
-    st.info("Placeholder: short beginner-friendly explanations of DNA concepts.")
+    st.write("Short explanations of the ideas used in this app.")
+    for title, text in LEARNING_TOPICS:
+        with st.expander(title):
+            st.write(text)    
 
 
 # ---------------------------------------------------------------------------
@@ -479,7 +566,7 @@ def show_biology_learning():
 def main():
     st.sidebar.title("🧬 DNA Intelligence")
     page = st.sidebar.radio("Navigation", PAGES)
-    st.sidebar.caption("Phase 6: prediction and performance")
+    st.sidebar.caption("AI-powered DNA sequence analysis")
     st.sidebar.warning("For learning and demonstration only.")
 
     if page == PAGES[0]:
