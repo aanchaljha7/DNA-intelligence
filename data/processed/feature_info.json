@@ -1,0 +1,64 @@
+{
+  "created_on": "2026-11-22",
+  "source": "data/processed/dna_dataset.csv (split column from Phase 2)",
+  "n_features": 326,
+  "k_values": [
+    3,
+    4
+  ],
+  "feature_groups": [
+    {
+      "name": "basic composition",
+      "columns": "0-5",
+      "features": [
+        "gc_content",
+        "at_content",
+        "freq_A",
+        "freq_C",
+        "freq_G",
+        "freq_T"
+      ]
+    },
+    {
+      "name": "3-mer frequencies",
+      "columns": "6-69",
+      "features": "k3_AAA ... k3_TTT (alphabetical order, 64 features)"
+    },
+    {
+      "name": "4-mer frequencies",
+      "columns": "70-325",
+      "features": "k4_AAAA ... k4_TTTT (alphabetical order, 256 features)"
+    }
+  ],
+  "value_meaning": "All features are frequencies between 0 and 1. gc_content = (G+C)/length, at_content = (A+T)/length, k-mer frequency = count of that overlapping k-mer divided by the number of k-mers in the sequence (length - k + 1).",
+  "label_meaning": {
+    "1": "coding",
+    "0": "intergenomic"
+  },
+  "shapes": {
+    "X_train": [
+      79935,
+      326
+    ],
+    "y_train": [
+      79935
+    ],
+    "X_test": [
+      19984,
+      326
+    ],
+    "y_test": [
+      19984
+    ]
+  },
+  "class_counts": {
+    "train": {
+      "coding": 39942,
+      "intergenomic": 39993
+    },
+    "test": {
+      "coding": 9985,
+      "intergenomic": 9999
+    }
+  }
+}

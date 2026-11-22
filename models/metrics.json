@@ -1,0 +1,137 @@
+{
+  "created_on": "2026-11-22",
+  "scikit_learn_version": "1.9.1",
+  "label_meaning": {
+    "1": "coding",
+    "0": "intergenomic"
+  },
+  "note": "precision, recall and f1 are for the coding class (label 1). confusion_matrix = [[TN, FP], [FN, TP]] with order [intergenomic, coding].",
+  "models": {
+    "random_forest": {
+      "accuracy": 0.8855584467574059,
+      "precision": 0.891556459816887,
+      "recall": 0.8777165748622935,
+      "f1": 0.8845823870804945,
+      "per_class": {
+        "intergenomic": {
+          "precision": 0.8797518219420918,
+          "recall": 0.8933893389338934,
+          "f1": 0.8865181362576291,
+          "support": 9999
+        },
+        "coding": {
+          "precision": 0.891556459816887,
+          "recall": 0.8777165748622935,
+          "f1": 0.8845823870804945,
+          "support": 9985
+        }
+      },
+      "confusion_matrix": [
+        [
+          8933,
+          1066
+        ],
+        [
+          1221,
+          8764
+        ]
+      ],
+      "test_samples": 19984,
+      "file": "models/random_forest_model.pkl",
+      "file_size_mb": 14.35,
+      "train_samples": 79935,
+      "training_seconds": 8.9,
+      "settings": {
+        "n_estimators": 100,
+        "max_depth": null,
+        "min_samples_leaf": 5,
+        "n_jobs": -1,
+        "random_state": 42
+      },
+      "top_features": [
+        {
+          "feature": "at_content",
+          "importance": 0.051355163523609845
+        },
+        {
+          "feature": "gc_content",
+          "importance": 0.044685371727808704
+        },
+        {
+          "feature": "k3_TAA",
+          "importance": 0.03662528970345998
+        },
+        {
+          "feature": "k3_CCG",
+          "importance": 0.03341773504259918
+        },
+        {
+          "feature": "k3_CGG",
+          "importance": 0.03250652403650437
+        },
+        {
+          "feature": "k3_TAG",
+          "importance": 0.03211882847603655
+        },
+        {
+          "feature": "freq_T",
+          "importance": 0.030356785186696787
+        },
+        {
+          "feature": "k3_CGA",
+          "importance": 0.022519083481628253
+        },
+        {
+          "feature": "freq_G",
+          "importance": 0.022467535384942335
+        },
+        {
+          "feature": "k3_CGC",
+          "importance": 0.020708051417347953
+        }
+      ]
+    },
+    "svm": {
+      "accuracy": 0.9064251401120896,
+      "precision": 0.9099727190057593,
+      "recall": 0.9019529293940911,
+      "f1": 0.9059450759480937,
+      "per_class": {
+        "intergenomic": {
+          "precision": 0.9029443838604144,
+          "recall": 0.9108910891089109,
+          "f1": 0.9069003285870756,
+          "support": 9999
+        },
+        "coding": {
+          "precision": 0.9099727190057593,
+          "recall": 0.9019529293940911,
+          "f1": 0.9059450759480937,
+          "support": 9985
+        }
+      },
+      "confusion_matrix": [
+        [
+          9108,
+          891
+        ],
+        [
+          979,
+          9006
+        ]
+      ],
+      "test_samples": 19984,
+      "file": "models/svm_model.pkl",
+      "file_size_mb": 4.27,
+      "train_samples": 20000,
+      "training_seconds": 36.0,
+      "settings": {
+        "kernel": "rbf",
+        "C": 1.0,
+        "gamma": "scale",
+        "cache_size": 1000,
+        "random_state": 42
+      }
+    }
+  }
+}

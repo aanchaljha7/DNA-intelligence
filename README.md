@@ -1,7 +1,7 @@
 # DNA Intelligence
 AI-Powered DNA Sequence Analysis and Classification System.
 
-Status: under construction (Phase 4 - feature extraction).
+Status: under construction (Phase 5 - model training).
 ## Setup
     python3 -m venv .venv
     source .venv/bin/activate
